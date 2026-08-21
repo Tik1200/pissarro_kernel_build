@@ -6,15 +6,26 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout Kernel Source
         uses: actions/checkout@v3
 
-      - name: Clone Kernel Source
+      - name: Setup Build Environment
         run: |
-          git clone --depth=1 https://github.com/pissarro-development/android_kernel_xiaomi_pissarro-hydrogen.git kernel_source
+          sudo apt-get update && sudo apt-get install -y git bc bison build-essential libssl-dev python3 flex libelf-dev
+          git clone https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86 --depth=1 clang-21
 
-      - name: Check Files
+      - name: Build Kernel
         run: |
-          echo "Kernel source cloned successfully!"
-          ls -la kernel_source
+          # Այստեղ քաշում ենք սորսը (այս հղումը փոխիր, եթե ուրիշ սորս ես ուզում)
+          git clone --depth=1 https://github.com/pissarro-development/android_kernel_xiaomi_pissarro-hydrogen.git kernel_source
+          cd kernel_source
+          
+          export PATH=$GITHUB_WORKSPACE/clang-21/clang-r563880/bin:$PATH
+          export ARCH=arm64
+          export SUBARCH=arm64
+          export CROSS_COMPILE=aarch64-linux-gnu-
+          
+          # Հավաքումը
+          make O=out vendor/pissarro_defconfig
+          make O=out -j$(nproc)
           
